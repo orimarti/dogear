@@ -26,6 +26,7 @@ from dogear.launch import build_command, display
 from dogear.picker import pick
 from dogear.proctree import default_table
 from dogear.render import format_table
+from dogear.setup_cmd import claude_plugin_installed, install_claude, install_codex
 from dogear.store import load, transaction
 
 
@@ -369,6 +370,25 @@ def cmd_pick(args: argparse.Namespace, ctx: Context) -> int:
     return _open_fav(favs[i], None, ctx, cfg)
 
 
+def cmd_setup(args: argparse.Namespace, ctx: Context) -> int:
+    if args.agent == "claude":
+        written = install_claude(args.force)
+        usage = "type /dogear (or /dogear my-label -t work) in Claude Code to save the session"
+    else:
+        written = install_codex(args.force)
+        usage = "type $dogear (or $dogear my-label -t work) in Codex to save the session"
+    for path in written:
+        print(f"wrote {path}", file=ctx.stdout)
+    print(usage, file=ctx.stdout)
+    if args.agent == "claude" and claude_plugin_installed():
+        print(
+            "dogear: note: the dogear Claude Code plugin is also installed (/dogear:dogear);"
+            " you only need one of the two",
+            file=ctx.stderr,
+        )
+    return 0
+
+
 # parser ---------------------------------------------------------------------
 
 
@@ -426,6 +446,11 @@ def build_parser() -> argparse.ArgumentParser:
     o = sub.add_parser("open", help="resume a favourite in its folder (flags after -- replace saved ones)")
     o.add_argument("ref", metavar="REF")
     o.set_defaults(func=cmd_open, extra=None)
+
+    su = sub.add_parser("setup", help="install the /dogear command for an agent")
+    su.add_argument("agent", choices=AGENTS)
+    su.add_argument("--force", action="store_true", help="overwrite an existing file")
+    su.set_defaults(func=cmd_setup)
 
     c = sub.add_parser("config", help="show the effective configuration")
     c.add_argument("--path", action="store_true", help="print only the config file path")

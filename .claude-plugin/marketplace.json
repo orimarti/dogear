@@ -1,0 +1,14 @@
+{
+  "name": "dogear",
+  "description": "dogear: favourite, list and resume Claude Code and Codex sessions.",
+  "owner": {
+    "name": "Oriol Martí"
+  },
+  "plugins": [
+    {
+      "name": "dogear",
+      "source": "./plugins/dogear",
+      "description": "/dogear:dogear saves the current session as a dogear favourite."
+    }
+  ]
+}
