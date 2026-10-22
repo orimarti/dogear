@@ -30,10 +30,10 @@ def test_setup_claude_writes_skill(homes):
 def test_setup_claude_refuses_overwrite(homes):
     run(["setup", "claude"])
     target = homes.claude / "skills" / "dogear" / "SKILL.md"
-    target.write_text("mine")
+    target.write_text("mine", encoding="utf-8")
     code, ctx = run(["setup", "claude"])
     assert code == 1 and "--force" in ctx.stderr.getvalue()
-    assert target.read_text() == "mine"
+    assert target.read_text(encoding="utf-8") == "mine"
     assert run(["setup", "claude", "--force"])[0] == 0
     assert target.read_bytes() == asset("claude_skill.md")
 
@@ -41,10 +41,10 @@ def test_setup_claude_refuses_overwrite(homes):
 def test_setup_claude_warns_about_plugin(homes):
     plugins = homes.claude / "plugins"
     plugins.mkdir(parents=True)
-    (plugins / "installed_plugins.json").write_text(json.dumps({"version": 2, "plugins": {"dogear@dogear": [{}]}}))
+    (plugins / "installed_plugins.json").write_text(json.dumps({"version": 2, "plugins": {"dogear@dogear": [{}]}}), encoding="utf-8")
     code, ctx = run(["setup", "claude"])
     assert code == 0 and "plugin" in ctx.stderr.getvalue()
-    assert (plugins / "installed_plugins.json").read_text().startswith('{"version": 2')
+    assert (plugins / "installed_plugins.json").read_text(encoding="utf-8").startswith('{"version": 2')
 
 
 def test_setup_claude_no_warning_without_plugin(homes):

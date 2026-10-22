@@ -11,7 +11,7 @@ X = "ab12cd34-0000-4000-8000-00000000000a"
 
 
 def favs(homes):
-    return json.loads((homes.dogear / "favorites.json").read_text())["favorites"]
+    return json.loads((homes.dogear / "favorites.json").read_text(encoding="utf-8"))["favorites"]
 
 
 def run(argv, **kw):

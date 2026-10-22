@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 
-from dogear.agents import Session, command_basename, newest_by_id
+from dogear.agents import Session, command_basename, newest_by_id, newest_first
 from dogear.jsonl import iter_jsonl
 from dogear.paths import codex_home
 
@@ -73,8 +73,7 @@ class CodexAdapter:
         return session_id in self._rollouts(session_id)
 
     def recent(self, limit: int) -> list[Session]:
-        items = self._rollouts()
-        newest = sorted(items.items(), key=lambda kv: kv[1].stat().st_mtime, reverse=True)[:limit]
+        newest = newest_first(self._rollouts(), limit)
         titles = self._titles()
         return [self._session(sid, p, titles) for sid, p in newest]
 

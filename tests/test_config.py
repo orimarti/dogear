@@ -14,7 +14,7 @@ def test_custom_command(homes):
     homes.dogear.mkdir()
     (homes.dogear / "config.toml").write_text(
         '[claude]\ncommand = "claude --dangerously-skip-permissions"\n[picker]\nuse_fzf = "never"\n'
-    )
+    , encoding="utf-8")
     cfg = load_config()
     assert split_command(cfg.commands["claude"]) == ["claude", "--dangerously-skip-permissions"]
     assert cfg.commands["codex"] == "codex"
@@ -23,20 +23,20 @@ def test_custom_command(homes):
 
 def test_bad_use_fzf(homes):
     homes.dogear.mkdir()
-    (homes.dogear / "config.toml").write_text('[picker]\nuse_fzf = "sometimes"\n')
+    (homes.dogear / "config.toml").write_text('[picker]\nuse_fzf = "sometimes"\n', encoding="utf-8")
     with pytest.raises(DogearError, match="use_fzf"):
         load_config()
 
 
 def test_broken_toml_names_file(homes):
     homes.dogear.mkdir()
-    (homes.dogear / "config.toml").write_text("[claude\n")
+    (homes.dogear / "config.toml").write_text("[claude\n", encoding="utf-8")
     with pytest.raises(DogearError, match="config.toml"):
         load_config()
 
 
 def test_empty_command_rejected(homes):
     homes.dogear.mkdir()
-    (homes.dogear / "config.toml").write_text('[codex]\ncommand = "  "\n')
+    (homes.dogear / "config.toml").write_text('[codex]\ncommand = "  "\n', encoding="utf-8")
     with pytest.raises(DogearError, match="codex"):
         load_config()

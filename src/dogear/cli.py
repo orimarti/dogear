@@ -31,7 +31,7 @@ from dogear.store import load, transaction
 
 
 def _run_fzf(args: list[str], text: str) -> tuple[int, str]:
-    r = subprocess.run(args, input=text, stdout=subprocess.PIPE, text=True)
+    r = subprocess.run(args, input=text, stdout=subprocess.PIPE, encoding="utf-8", errors="replace")
     return r.returncode, r.stdout
 
 
@@ -59,6 +59,10 @@ class Context:
 
     @classmethod
     def from_env(cls) -> "Context":
+        # never crash on a title the console can't encode (e.g. cp1252 when piped on Windows)
+        for stream in (sys.stdout, sys.stderr):
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(errors="replace")
         return cls(
             stdin_isatty=sys.stdin.isatty(),
             stdout_isatty=sys.stdout.isatty(),

@@ -15,7 +15,7 @@ def saved(homes):
     make_claude_session(homes.claude, ID, cwd, ai_title="Jobs")
     homes.dogear.mkdir()
     fav = {"agent": "claude", "session_id": ID, "cwd": str(cwd), "label": "jobs", "title": "Jobs", "note": "", "tags": [], "args": "--model opus", "added_at": "2026-01-01T00:00:00Z"}
-    (homes.dogear / "favorites.json").write_text(json.dumps({"version": 1, "favorites": [fav]}))
+    (homes.dogear / "favorites.json").write_text(json.dumps({"version": 1, "favorites": [fav]}), encoding="utf-8")
     homes.cwd = cwd
     return homes
 

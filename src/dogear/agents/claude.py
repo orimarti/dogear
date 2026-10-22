@@ -6,7 +6,7 @@ import glob
 import json
 from pathlib import Path
 
-from dogear.agents import Session, command_basename, newest_by_id
+from dogear.agents import Session, command_basename, newest_by_id, newest_first
 from dogear.jsonl import iter_jsonl
 from dogear.paths import claude_home
 
@@ -79,15 +79,17 @@ class ClaudeAdapter:
         return session_id in self._transcripts(session_id)
 
     def recent(self, limit: int) -> list[Session]:
-        items = self._transcripts()
-        newest = sorted(items.items(), key=lambda kv: kv[1].stat().st_mtime, reverse=True)[:limit]
-        return [self._session(sid, p) for sid, p in newest]
+        return [self._session(sid, p) for sid, p in newest_first(self._transcripts(), limit)]
 
     # processes -------------------------------------------------------------
 
     def is_agent_process(self, command: str) -> bool:
         norm = command.replace("\\", "/")
-        return command_basename(command) == "claude" or "/claude/versions/" in norm
+        return (
+            command_basename(command) == "claude"
+            or "/claude/versions/" in norm
+            or "/@anthropic-ai/claude-code/" in norm
+        )
 
     def detect(self, pid: int, table) -> list[Session]:
         """Claude writes sessions/<pid>.json for each live process; stale files are ignored."""

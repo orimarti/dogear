@@ -17,14 +17,14 @@ def test_plugin_skill_is_the_setup_skill():
 
 
 def test_plugin_version_matches_package():
-    manifest = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())
+    manifest = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
     assert manifest["name"] == "dogear"
     assert manifest["version"] == dogear.__version__
 
 
 def test_marketplace_lists_plugin():
-    market = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text())
-    manifest = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())
+    market = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+    manifest = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
     [entry] = market["plugins"]
     assert market["name"] == "dogear" and market["owner"]["name"]
     assert entry["name"] == manifest["name"]

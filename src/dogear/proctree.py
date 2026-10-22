@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import time
@@ -22,16 +23,24 @@ class ProcessTable(Protocol):
         """Process start as epoch seconds."""
 
 
-def _run(args: list[str]) -> str | None:
+# lsof prints bytes that aren't printable in the current locale as \xNN
+_LSOF_ESCAPE = re.compile(rb"\\x([0-9a-fA-F]{2})")
+
+
+def _unescape(m: "re.Match[bytes]") -> bytes:
+    return bytes([int(m.group(1), 16)])
+
+
+INTERPRETERS = {"node", "nodejs", "bun", "deno"}
+
+
+def _run(args: list[str], c_locale: bool = False) -> str | None:
+    """Run a helper; None on any failure. Only `ps -o lstart=` needs the C locale:
+    lsof escapes non-ASCII path bytes under it."""
+    env = {**os.environ, "LC_ALL": "C"} if c_locale else None
     try:
-        r = subprocess.run(
-            args,
-            capture_output=True,
-            text=True,
-            timeout=10,
-            env={**os.environ, "LC_ALL": "C"},
-        )
-    except (OSError, subprocess.SubprocessError):
+        r = subprocess.run(args, capture_output=True, text=True, errors="replace", timeout=10, env=env)
+    except (OSError, ValueError, subprocess.SubprocessError):
         return None
     return r.stdout if r.returncode == 0 else None
 
@@ -45,13 +54,23 @@ class PosixPsTable:
             return None
         ppid, _, comm = out.strip().partition(" ")
         try:
-            return int(ppid), comm.strip()
+            ppid_n = int(ppid)
         except ValueError:
             return None
+        comm = comm.strip()
+        if _is_interpreter(comm):
+            args = _run(["ps", "-o", "args=", "-p", str(pid)])
+            if args and args.split():
+                comm = effective_command(args.split())
+        return ppid_n, comm
 
     def _lsof_names(self, args: list[str]) -> list[str]:
-        out = _run(["lsof", "-n", "-P", *args, "-Fn"]) or ""
-        return [line[1:] for line in out.splitlines() if line.startswith("n")]
+        # paths are bytes in the filesystem encoding, not the locale's
+        try:
+            r = subprocess.run(["lsof", "-n", "-P", *args, "-Fn"], capture_output=True, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            return []
+        return [os.fsdecode(_LSOF_ESCAPE.sub(_unescape, line[1:])) for line in r.stdout.splitlines() if line.startswith(b"n")]
 
     def open_files(self, pid: int) -> list[str]:
         return self._lsof_names(["-p", str(pid)])
@@ -61,7 +80,7 @@ class PosixPsTable:
         return names[0] if names else None
 
     def start_time(self, pid: int) -> float | None:
-        out = _run(["ps", "-o", "lstart=", "-p", str(pid)])
+        out = _run(["ps", "-o", "lstart=", "-p", str(pid)], c_locale=True)
         if not out or not out.strip():
             return None
         try:
@@ -92,6 +111,12 @@ class ProcfsTable:
                 cmd = Path(f"/proc/{pid}/comm").read_text().strip()
             except OSError:
                 cmd = ""
+        if _is_interpreter(cmd):
+            try:
+                argv = Path(f"/proc/{pid}/cmdline").read_bytes().decode(errors="replace").split("\0")
+                cmd = effective_command([a for a in argv if a]) or cmd
+            except OSError:
+                pass
         return int(fields[1]), cmd
 
     def open_files(self, pid: int) -> list[str]:
@@ -159,6 +184,20 @@ class WindowsTable:
 
     def start_time(self, pid: int) -> float | None:
         return None
+
+
+def effective_command(argv: list[str]) -> str:
+    """The program a process really is: for `node /path/cli.js …` that's the script."""
+    if not argv:
+        return ""
+    base = argv[0].replace("\\", "/").rsplit("/", 1)[-1].lower().removesuffix(".exe")
+    if base in INTERPRETERS:
+        return next((a for a in argv[1:] if not a.startswith("-")), argv[0])
+    return argv[0]
+
+
+def _is_interpreter(cmd: str) -> bool:
+    return cmd.replace("\\", "/").rsplit("/", 1)[-1].lower().removesuffix(".exe") in INTERPRETERS
 
 
 def default_table() -> ProcessTable:

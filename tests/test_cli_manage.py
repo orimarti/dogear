@@ -29,12 +29,12 @@ def three(homes):
             {"agent": "codex", "session_id": CX, "cwd": str(homes.root / "c"), "label": "misc", "title": "Misc", "note": "", "tags": [], "args": "", "added_at": "2026-01-03T00:00:00Z"},
         ],
     }
-    (homes.dogear / "favorites.json").write_text(json.dumps(data))
+    (homes.dogear / "favorites.json").write_text(json.dumps(data), encoding="utf-8")
     return homes
 
 
 def favs(homes):
-    return {f["label"]: f for f in json.loads((homes.dogear / "favorites.json").read_text())["favorites"]}
+    return {f["label"]: f for f in json.loads((homes.dogear / "favorites.json").read_text(encoding="utf-8"))["favorites"]}
 
 
 def table_labels(out):

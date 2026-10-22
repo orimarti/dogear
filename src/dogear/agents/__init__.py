@@ -53,6 +53,18 @@ def newest_by_id(paths_with_ids: list[tuple[str, Path]]) -> dict[str, Path]:
     return {sid: p for sid, (m, p) in best.items()}
 
 
+def newest_first(by_id: dict[str, Path], limit: int) -> list[tuple[str, Path]]:
+    """Sort by mtime without failing when a file disappears meanwhile (agents prune old ones)."""
+    stamped = []
+    for sid, p in by_id.items():
+        try:
+            stamped.append((p.stat().st_mtime, sid, p))
+        except OSError:
+            continue
+    stamped.sort(key=lambda t: t[0], reverse=True)
+    return [(sid, p) for _, sid, p in stamped[:limit]]
+
+
 def get_adapters() -> dict[str, Adapter]:
     from dogear.agents.claude import ClaudeAdapter
     from dogear.agents.codex import CodexAdapter
