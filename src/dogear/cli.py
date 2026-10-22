@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import json
 import os
 import re
 import shutil
@@ -19,11 +20,12 @@ from dogear.agents import Session, find_sessions, get_adapters
 from dogear.config import AGENTS, Config, load_config
 from dogear.detect import DetectionError, detect_current
 from dogear.errors import DogearError
-from dogear.favorites import default_label, find_by_session, new_favorite, unique_label, validate_label
-from dogear.paths import favorites_path
+from dogear.favorites import default_label, find_by_session, new_favorite, ordered, resolve, unique_label, validate_label
+from dogear.paths import config_path, favorites_path
 from dogear.picker import pick
 from dogear.proctree import default_table
-from dogear.store import transaction
+from dogear.render import format_table
+from dogear.store import load, transaction
 
 
 def _run_fzf(args: list[str], text: str) -> tuple[int, str]:
@@ -202,6 +204,128 @@ def cmd_add(args: argparse.Namespace, ctx: Context) -> int:
     return 0
 
 
+def _missing(favs: list[dict]) -> set[tuple[str, str]]:
+    adapters = get_adapters()
+    out = set()
+    for f in favs:
+        a = adapters.get(str(f.get("agent")))
+        if a is None or not a.exists(str(f.get("session_id"))):
+            out.add((str(f.get("agent")), str(f.get("session_id"))))
+    return out
+
+
+def _color(ctx: Context) -> bool:
+    return ctx.stdout_isatty and "NO_COLOR" not in os.environ
+
+
+def cmd_ls(args: argparse.Namespace, ctx: Context) -> int:
+    favs = load(favorites_path())["favorites"]
+    rows = list(enumerate(ordered(favs), 1))
+    if args.tag:
+        rows = [(n, f) for n, f in rows if args.tag in (f.get("tags") or [])]
+    if args.agent:
+        rows = [(n, f) for n, f in rows if f.get("agent") == args.agent]
+    if args.json:
+        print(json.dumps([f for _, f in rows], indent=2, ensure_ascii=False), file=ctx.stdout)
+        return 0
+    if not favs:
+        print("no favourites yet — try dogear add", file=ctx.stdout)
+        return 0
+    if not rows:
+        print("no favourites match", file=ctx.stdout)
+        return 0
+    width = shutil.get_terminal_size((100, 24)).columns
+    table = format_table(rows, _missing([f for _, f in rows]), width=width, color=_color(ctx), home=str(Path.home()))
+    print(table, file=ctx.stdout)
+    return 0
+
+
+def cmd_rename(args: argparse.Namespace, ctx: Context) -> int:
+    validate_label(args.new_label)
+    with transaction(favorites_path()) as data:
+        fav = resolve(data["favorites"], args.ref)
+        if any(f is not fav and f.get("label") == args.new_label for f in data["favorites"]):
+            raise DogearError(f"label '{args.new_label}' is already used")
+        old, fav["label"] = fav.get("label"), args.new_label
+    print(f"renamed {old} → {args.new_label}", file=ctx.stdout)
+    return 0
+
+
+def cmd_note(args: argparse.Namespace, ctx: Context) -> int:
+    with transaction(favorites_path()) as data:
+        fav = resolve(data["favorites"], args.ref)
+        fav["note"] = args.text
+    print(f"{'cleared note of' if not args.text else 'noted'} {fav.get('label')}", file=ctx.stdout)
+    return 0
+
+
+def cmd_tag(args: argparse.Namespace, ctx: Context) -> int:
+    if not args.changes:
+        raise DogearError("give tags to change, e.g. dogear tag REF +work -old")
+    with transaction(favorites_path()) as data:
+        fav = resolve(data["favorites"], args.ref)
+        tags = list(fav.get("tags") or [])
+        for change in args.changes:
+            if change.startswith("-"):
+                tags = [t for t in tags if t != change[1:].strip()]
+            else:
+                tags = _norm_tags(tags + [change[1:] if change.startswith("+") else change])
+        fav["tags"] = tags
+    print(f"{fav.get('label')}: {','.join(tags) or '(no tags)'}", file=ctx.stdout)
+    return 0
+
+
+def cmd_edit(args: argparse.Namespace, ctx: Context) -> int:
+    with transaction(favorites_path()) as data:
+        fav = resolve(data["favorites"], args.ref)
+        fav["args"] = args.flags
+    print(f"{fav.get('label')}: args = {args.flags!r}", file=ctx.stdout)
+    return 0
+
+
+def cmd_rm(args: argparse.Namespace, ctx: Context) -> int:
+    with transaction(favorites_path()) as data:
+        favs = data["favorites"]
+        doomed = [resolve(favs, ref) for ref in args.refs]
+        data["favorites"] = [f for f in favs if not any(f is d for d in doomed)]
+    for d in dict((id(d), d) for d in doomed).values():
+        print(f"removed {d.get('label')}", file=ctx.stdout)
+    return 0
+
+
+def cmd_prune(args: argparse.Namespace, ctx: Context) -> int:
+    favs = load(favorites_path())["favorites"]
+    missing = _missing(favs)
+    gone = [f for f in favs if (str(f.get("agent")), str(f.get("session_id"))) in missing]
+    if not gone:
+        print("nothing to prune", file=ctx.stdout)
+        return 0
+    for f in gone:
+        print(f"  {f.get('label')}  ({f.get('agent')} · {f.get('title')})", file=ctx.stdout)
+    if not args.yes:
+        if not ctx.stdin_isatty:
+            raise DogearError("no TTY to confirm; rerun with --yes")
+        print(f"remove {len(gone)} favourite(s)? [y/N] ", end="", file=ctx.stderr, flush=True)
+        if ctx.stdin.readline().strip().lower() not in ("y", "yes"):
+            print("kept them", file=ctx.stdout)
+            return 0
+    with transaction(favorites_path()) as data:
+        keys = {(f.get("agent"), f.get("session_id")) for f in gone}
+        data["favorites"] = [f for f in data["favorites"] if (f.get("agent"), f.get("session_id")) not in keys]
+    print(f"removed {len(gone)} favourite(s)", file=ctx.stdout)
+    return 0
+
+
+def cmd_config(args: argparse.Namespace, ctx: Context) -> int:
+    cfg = load_config()
+    print(str(config_path()) if args.path else f"# {config_path()}", file=ctx.stdout)
+    if not args.path:
+        for agent in AGENTS:
+            print(f"\n[{agent}]\ncommand = {json.dumps(cfg.commands[agent])}", file=ctx.stdout)
+        print(f"\n[picker]\nuse_fzf = {json.dumps(cfg.use_fzf)}", file=ctx.stdout)
+    return 0
+
+
 # parser ---------------------------------------------------------------------
 
 
@@ -221,6 +345,44 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--args", dest="flags", metavar="FLAGS", help='extra launch flags, e.g. --args "--model opus" or --args=--verbose')
     a.add_argument("--agent", choices=AGENTS)
     a.set_defaults(func=cmd_add)
+
+    ls = sub.add_parser("ls", help="list favourites")
+    ls.add_argument("-t", "--tag")
+    ls.add_argument("--agent", choices=AGENTS)
+    ls.add_argument("--json", action="store_true", help="print the raw favourites as JSON")
+    ls.set_defaults(func=cmd_ls)
+
+    r = sub.add_parser("rename", help="change a favourite's label")
+    r.add_argument("ref", metavar="REF")
+    r.add_argument("new_label", metavar="NEW_LABEL")
+    r.set_defaults(func=cmd_rename)
+
+    n = sub.add_parser("note", help='set a favourite\'s note ("" clears it)')
+    n.add_argument("ref", metavar="REF")
+    n.add_argument("text", metavar="TEXT")
+    n.set_defaults(func=cmd_note)
+
+    t = sub.add_parser("tag", help="add (+TAG) or remove (-TAG) tags")
+    t.add_argument("ref", metavar="REF")
+    t.add_argument("changes", nargs=argparse.REMAINDER, metavar="+TAG|-TAG")
+    t.set_defaults(func=cmd_tag)
+
+    e = sub.add_parser("edit", help="change a favourite's saved launch flags")
+    e.add_argument("ref", metavar="REF")
+    e.add_argument("--args", dest="flags", required=True, metavar="FLAGS")
+    e.set_defaults(func=cmd_edit)
+
+    rm = sub.add_parser("rm", help="remove favourites")
+    rm.add_argument("refs", nargs="+", metavar="REF")
+    rm.set_defaults(func=cmd_rm)
+
+    pr = sub.add_parser("prune", help="remove favourites whose session no longer exists")
+    pr.add_argument("--yes", action="store_true", help="don't ask")
+    pr.set_defaults(func=cmd_prune)
+
+    c = sub.add_parser("config", help="show the effective configuration")
+    c.add_argument("--path", action="store_true", help="print only the config file path")
+    c.set_defaults(func=cmd_config)
     return p
 
 
