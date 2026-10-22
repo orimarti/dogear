@@ -22,6 +22,7 @@ from dogear.detect import DetectionError, detect_current
 from dogear.errors import DogearError
 from dogear.favorites import default_label, find_by_session, new_favorite, ordered, resolve, unique_label, validate_label
 from dogear.paths import config_path, favorites_path
+from dogear.launch import build_command, display
 from dogear.picker import pick
 from dogear.proctree import default_table
 from dogear.render import format_table
@@ -326,6 +327,48 @@ def cmd_config(args: argparse.Namespace, ctx: Context) -> int:
     return 0
 
 
+def _open_fav(fav: dict, extra: list[str] | None, ctx: Context, cfg: Config) -> int:
+    agent = str(fav.get("agent"))
+    adapter = get_adapters().get(agent)
+    if adapter is None:
+        raise DogearError(f"{fav.get('label')}: unknown agent '{agent}'")
+    sid = str(fav.get("session_id"))
+    if not adapter.exists(sid):
+        raise DogearError(f"{fav.get('label')}: the {agent} session {sid} no longer exists; remove it with dogear prune")
+    cwd = str(fav.get("cwd") or "")
+    if not cwd or not os.path.isdir(cwd):
+        raise DogearError(f"{fav.get('label')}: folder {cwd or '(unknown)'} does not exist")
+    cmd = build_command(cfg, fav, adapter, extra)
+    exe = ctx.which(cmd[0]) if cmd else None
+    if not exe:
+        raise DogearError(
+            f"command not found: {cmd[0] if cmd else '(empty)'}; set [{agent}] command in {config_path()}"
+            " (shell aliases are not visible to dogear)"
+        )
+    print(display(cmd, cwd), file=ctx.stderr, flush=True)
+    return ctx.exec_fn([exe, *cmd[1:]], cwd)
+
+
+def cmd_open(args: argparse.Namespace, ctx: Context) -> int:
+    cfg = load_config()
+    fav = resolve(load(favorites_path())["favorites"], args.ref)
+    return _open_fav(fav, args.extra, ctx, cfg)
+
+
+def cmd_pick(args: argparse.Namespace, ctx: Context) -> int:
+    cfg = load_config()
+    favs = ordered(load(favorites_path())["favorites"])
+    if not favs:
+        print("no favourites yet — try dogear add", file=ctx.stdout)
+        return 0
+    rows = [f"{f.get('label')}  ·  {f.get('agent')}  ·  {f.get('title')}  ·  {_short_path(str(f.get('cwd', '')))}" for f in favs]
+    previews = [f"{f.get('title')} / {f.get('cwd')} / {f.get('note') or ''}" for f in favs]
+    i = pick(rows, ctx=ctx, use_fzf=cfg.use_fzf, prompt="open", previews=previews)
+    if i is None:
+        return 0
+    return _open_fav(favs[i], None, ctx, cfg)
+
+
 # parser ---------------------------------------------------------------------
 
 
@@ -380,6 +423,10 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--yes", action="store_true", help="don't ask")
     pr.set_defaults(func=cmd_prune)
 
+    o = sub.add_parser("open", help="resume a favourite in its folder (flags after -- replace saved ones)")
+    o.add_argument("ref", metavar="REF")
+    o.set_defaults(func=cmd_open, extra=None)
+
     c = sub.add_parser("config", help="show the effective configuration")
     c.add_argument("--path", action="store_true", help="print only the config file path")
     c.set_defaults(func=cmd_config)
@@ -388,14 +435,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None, ctx: Context | None = None) -> int:
     ctx = ctx or Context.from_env()
-    argv = sys.argv[1:] if argv is None else argv
+    argv = list(sys.argv[1:] if argv is None else argv)
+    extra = None
+    if argv[:1] == ["open"] and "--" in argv:
+        i = argv.index("--")
+        argv, extra = argv[:i], argv[i + 1 :]
     args = build_parser().parse_args(argv)
+    if extra is not None:
+        args.extra = extra
     try:
         if args.version:
             print(f"dogear {__version__}", file=ctx.stdout)
             return 0
         if args.command is None:
-            return 0
+            return cmd_pick(args, ctx)
         return args.func(args, ctx)
     except DogearError as e:
         print(f"dogear: {e}", file=ctx.stderr)
