@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import glob
 import json
+import os
 from pathlib import Path
 
 from dogear.agents import Session, command_basename, newest_by_id
@@ -83,7 +84,32 @@ class CodexAdapter:
         return command_basename(command) == "codex"
 
     def detect(self, pid: int, table) -> list[Session]:
-        return []
+        """The rollout the process has open; else rollouts in its cwd written since it started."""
+        sessions_dir = os.path.realpath(self.home / "sessions")
+        open_ids = []
+        for f in table.open_files(pid):
+            real = os.path.realpath(f)
+            name = os.path.basename(real)
+            if real.startswith(sessions_dir + os.sep) and name.startswith("rollout-") and name.endswith(".jsonl"):
+                open_ids.append(name[: -len(".jsonl")][-UUID_LEN:])
+        if open_ids:
+            return [s for sid in dict.fromkeys(open_ids) if (s := self.get(sid))]
+        cwd, start = table.cwd(pid), table.start_time(pid)
+        if not cwd or start is None:
+            return []
+        real_cwd = os.path.realpath(cwd)
+        titles = self._titles()
+        out = []
+        for sid, p in sorted(self._rollouts().items()):
+            try:
+                if p.stat().st_mtime < start:
+                    continue
+            except OSError:
+                continue
+            s = self._session(sid, p, titles)
+            if s.cwd and os.path.realpath(s.cwd) == real_cwd:
+                out.append(s)
+        return out
 
     def resume_args(self, session_id: str) -> list[str]:
         return ["resume", session_id]

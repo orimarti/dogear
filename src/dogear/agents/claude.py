@@ -90,7 +90,20 @@ class ClaudeAdapter:
         return command_basename(command) == "claude" or "/claude/versions/" in norm
 
     def detect(self, pid: int, table) -> list[Session]:
-        return []
+        """Claude writes sessions/<pid>.json for each live process; stale files are ignored."""
+        try:
+            live = json.loads((self.home / "sessions" / f"{pid}.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            return []
+        if not isinstance(live, dict) or live.get("pid") != pid or not isinstance(live.get("sessionId"), str):
+            return []
+        sid = live["sessionId"]
+        found = self.get(sid)
+        if found:
+            return [found]
+        cwd = live.get("cwd") if isinstance(live.get("cwd"), str) else ""
+        name = live.get("name") if isinstance(live.get("name"), str) and live.get("name") else "(untitled)"
+        return [Session("claude", sid, cwd, name, 0.0, None)]
 
     def resume_args(self, session_id: str) -> list[str]:
         return ["--resume", session_id]
