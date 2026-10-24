@@ -54,7 +54,7 @@ prefix of the id is enough).
 
 | Command | What it does |
 | --- | --- |
-| `dogear add [SESSION\|LABEL] [-l LABEL] [-n NOTE] [-t TAG ...] [--args FLAGS] [--agent A]` | Save a session. A word that isn't a session id (8+ hex characters) is taken as the label for the current session. |
+| `dogear add [SESSION\|LABEL] [-l LABEL] [-n NOTE] [-t TAG]... [--args FLAGS] [--agent A]` | Save a session. A word that isn't a session id (8+ hex characters) is taken as the label for the current session. Repeat `-t` (or use `-t a,b`) for several tags. Giving a label for a session that's already saved renames it. |
 | `dogear ls [-t TAG] [--agent A] [--json]` | List favourites, newest first. `missing` marks sessions that no longer exist. |
 | `dogear open REF [-- FLAGS]` | Resume a favourite in its folder. Flags after `--` replace its saved flags for this launch (`--` alone: no flags). |
 | `dogear rename REF NEW` · `note REF TEXT` · `tag REF +a -b` · `edit REF --args FLAGS` · `rm REF ...` | Manage favourites. `REF` is a label or the number from `dogear ls`. |

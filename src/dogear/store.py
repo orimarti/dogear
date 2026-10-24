@@ -7,6 +7,7 @@ import os
 import shutil
 import tempfile
 import time
+import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -58,40 +59,69 @@ def save(path: Path, data: dict) -> None:
         raise
 
 
+def _try_create(path: Path, token: str) -> bool:
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        return False
+    except PermissionError:
+        if not os.access(path.parent, os.W_OK):
+            raise DogearError(f"cannot write to {path.parent}") from None
+        return False  # Windows reports a lock file being deleted as access denied
+    with os.fdopen(fd, "w") as f:
+        f.write(token)
+    return True
+
+
+def _is_stale(path: Path, stale: float) -> bool:
+    try:
+        return time.time() - path.stat().st_mtime > stale
+    except OSError:
+        return False
+
+
+def _unlink(path: Path) -> None:
+    try:
+        path.unlink()
+    except OSError:
+        pass
+
+
+def _break_if_stale(lock: Path, stale: float) -> None:
+    """Remove a lock left by a crashed dogear. One breaker at a time, and it re-checks
+    staleness while holding the breaker lock, so a fresh lock is never removed."""
+    if not _is_stale(lock, stale):
+        return
+    breaker = lock.with_name(lock.name + ".break")
+    if _is_stale(breaker, stale):  # a breaker crashed mid-break
+        _unlink(breaker)
+    if not _try_create(breaker, "break"):
+        return
+    try:
+        if _is_stale(lock, stale):
+            _unlink(lock)
+    finally:
+        _unlink(breaker)
+
+
 @contextmanager
 def locked(path: Path, timeout: float = 5.0, stale: float = 10.0) -> Iterator[None]:
     path.parent.mkdir(parents=True, exist_ok=True)
     lock = path.with_name(path.name + ".lock")
+    token = f"{os.getpid()}-{uuid.uuid4().hex}"
     deadline = time.monotonic() + timeout
-    while True:
-        try:
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.write(fd, str(os.getpid()).encode())
-            os.close(fd)
-            break
-        except FileExistsError:
-            try:
-                if time.time() - lock.stat().st_mtime > stale:
-                    lock.unlink()
-                    continue
-            except FileNotFoundError:
-                continue
-            except PermissionError:
-                pass  # Windows: the holder is replacing it right now
-            if time.monotonic() >= deadline:
-                raise DogearError(f"{lock} is held by another dogear; try again") from None
-            time.sleep(0.05)
-        except PermissionError:
-            # Windows reports a lock file being deleted as access denied
-            if time.monotonic() >= deadline:
-                raise DogearError(f"{lock} is held by another dogear; try again") from None
-            time.sleep(0.05)
+    while not _try_create(lock, token):
+        _break_if_stale(lock, stale)
+        if time.monotonic() >= deadline:
+            raise DogearError(f"{lock} is held by another dogear; try again")
+        time.sleep(0.05)
     try:
         yield
     finally:
-        try:
-            lock.unlink()
-        except FileNotFoundError:
+        try:  # only remove our own lock, never one another process took over
+            if lock.read_text() == token:
+                lock.unlink()
+        except OSError:
             pass
 
 

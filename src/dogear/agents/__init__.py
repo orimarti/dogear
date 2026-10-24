@@ -74,6 +74,7 @@ def get_adapters() -> dict[str, Adapter]:
 
 def find_sessions(prefix: str, agent: str | None = None) -> list[Session]:
     out: list[Session] = []
+    prefix = prefix.lower()  # session ids are lowercase UUIDs
     for name, adapter in get_adapters().items():
         if agent is None or agent == name:
             out.extend(adapter.find(prefix))

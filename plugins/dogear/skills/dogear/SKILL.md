@@ -18,7 +18,7 @@ The user's request: $ARGUMENTS
    - Already in flag form (`my-label -t work -n "note"`): use it unchanged.
    - A name or label: put it first, as one word (lowercase, hyphens instead of
      spaces, not only digits).
-   - Tags: `-t TAG ...`. A note: `-n "TEXT"`. Launch flags such as a model:
+   - Tags: one `-t TAG` per tag. A note: `-n "TEXT"`. Launch flags such as a model:
      `--args "FLAGS"`. Quote any value with spaces.
    - Nothing given: plain `dogear add`.
    - Never add a session id unless the user gave one.
@@ -26,7 +26,7 @@ The user's request: $ARGUMENTS
    Examples:
    - "save with name testtest" → `dogear add testtest`
    - "call it jobs, tags work and client, note: auth half done" →
-     `dogear add jobs -t work client -n "auth half done"`
+     `dogear add jobs -t work -t client -n "auth half done"`
    - "bookmark this with opus" → `dogear add --args "--model opus"`
 4. Run that command once with the shell tool.
 5. If the output says `already saved as OLD` and the user asked for a

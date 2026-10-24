@@ -115,10 +115,11 @@ def _session_row(s: Session) -> str:
 
 def _norm_tags(tags: list[str] | None) -> list[str]:
     out: list[str] = []
-    for t in tags or []:
-        t = t.strip()
-        if t and t not in out:
-            out.append(t)
+    for item in tags or []:
+        for t in item.split(","):
+            t = t.strip()
+            if t and t not in out:
+                out.append(t)
     return out
 
 
@@ -172,22 +173,25 @@ def cmd_add(args: argparse.Namespace, ctx: Context) -> int:
     cfg = load_config()
     label = args.label
     token = args.session
-    if token and SESSION_TOKEN.match(token):
-        session = _lookup(token, args.agent)
-    else:
-        if token:
-            if label:
-                raise DogearError(f"got both a label '{token}' and -l {label}; give one")
-            label = token
-        session = _current_or_pick(ctx, cfg)
+    is_id = bool(token and SESSION_TOKEN.match(token))
+    if token and not is_id:
+        if label:
+            raise DogearError(f"got both a label '{token}' and -l {label}; give one")
+        label = token
     if label is not None:
-        validate_label(label)
+        validate_label(label)  # before any picker, so a bad label doesn't waste a choice
+    session = _lookup(token, args.agent) if is_id else _current_or_pick(ctx, cfg)
     tags = _norm_tags(args.tags)
     with transaction(favorites_path()) as data:
         favs = data["favorites"]
         existing = find_by_session(favs, session.agent, session.session_id)
         if existing:
             changed = []
+            old_label = existing.get("label")
+            if label is not None and label != old_label:
+                if any(f is not existing and f.get("label") == label for f in favs):
+                    raise DogearError(f"already saved as {old_label}; label '{label}' is already used")
+                existing["label"] = label
             if args.note is not None:
                 existing["note"] = args.note
                 changed.append("note")
@@ -197,7 +201,9 @@ def cmd_add(args: argparse.Namespace, ctx: Context) -> int:
             if args.flags is not None:
                 existing["args"] = args.flags
                 changed.append("args")
-            msg = f"already saved as {existing.get('label')}"
+            msg = f"already saved as {old_label}"
+            if existing.get("label") != old_label:
+                msg += f"; renamed to {existing['label']}"
             if changed:
                 msg += "; updated " + "/".join(changed)
             print(msg, file=ctx.stdout)
@@ -408,7 +414,7 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("session", nargs="?", metavar="SESSION|LABEL", help="session id or prefix; any other word is a label for the current session")
     a.add_argument("-l", "--label")
     a.add_argument("-n", "--note")
-    a.add_argument("-t", "--tag", dest="tags", action="extend", nargs="+", metavar="TAG")
+    a.add_argument("-t", "--tag", dest="tags", action="append", metavar="TAG", help="repeat -t, or separate tags with commas")
     a.add_argument("--args", dest="flags", metavar="FLAGS", help='extra launch flags, e.g. --args "--model opus" or --args=--verbose')
     a.add_argument("--agent", choices=AGENTS)
     a.set_defaults(func=cmd_add)
@@ -481,4 +487,13 @@ def main(argv: list[str] | None = None, ctx: Context | None = None) -> int:
         return args.func(args, ctx)
     except DogearError as e:
         print(f"dogear: {e}", file=ctx.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print(file=ctx.stderr)
+        return 130
+    except BrokenPipeError:
+        # `dogear ls | head`: the reader went away; silence the flush at exit too
+        if ctx.stdout is sys.stdout:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
         return 1

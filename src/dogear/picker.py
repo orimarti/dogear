@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import os
+
 from dogear.errors import DogearError
+
+WINDOWS = os.name == "nt"  # fzf runs previews through cmd.exe there, which shows the quotes
 
 ATTEMPTS = 3
 
@@ -28,11 +32,11 @@ def _pick_fzf(fzf: str, rows: list[str], ctx, prompt: str, previews: list[str] |
     lines = []
     for i, row in enumerate(rows):
         fields = [str(i), _clean(row)]
-        if previews:
+        if previews and not WINDOWS:
             fields.append(_clean(previews[i]))
         lines.append("\t".join(fields))
     args = [fzf, "--delimiter=\t", "--with-nth=2", "--reverse", "--height=40%", f"--prompt={prompt}> "]
-    if previews:
+    if previews and not WINDOWS:
         args += ["--preview=echo {3}", "--preview-window=down:3:wrap"]
     code, out = ctx.run_fzf(args, "\n".join(lines) + "\n")
     if code != 0 or not out.strip():

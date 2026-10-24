@@ -21,6 +21,8 @@ def slugify(text: str, max_len: int = 40) -> str:
 def validate_label(label: str) -> None:
     if not label or label.strip() != label or any(c.isspace() for c in label):
         raise DogearError(f"invalid label {label!r}: use a non-empty name without spaces")
+    if label.startswith("-"):
+        raise DogearError(f"invalid label {label!r}: labels can't start with '-'")
     if label.isdigit():
         raise DogearError(f"invalid label {label!r}: labels can't be all digits (numbers refer to dogear ls)")
 

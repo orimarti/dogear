@@ -134,5 +134,5 @@ def test_add_unicode_paths_and_titles(homes):
 
 def test_add_tags_normalised(homes):
     make_claude_session(homes.claude, A, homes.root / "p")
-    run(["add", A, "-t", "work", " work ", "", "-t", "client"])
+    run(["add", A, "-t", "work", "-t", " work ", "-t", "", "-t", "client"])
     assert favs(homes)[0]["tags"] == ["work", "client"]

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import glob
 import json
+import re
 from pathlib import Path
 
 from dogear.agents import Session, command_basename, newest_by_id, newest_first
-from dogear.jsonl import iter_jsonl
 from dogear.paths import claude_home
 
 TITLE_LEN = 60
+SESSION_FILE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 
 def _prompt_text(message: object) -> str:
@@ -47,12 +48,14 @@ class ClaudeAdapter:
     def _transcripts(self, prefix: str = "") -> dict[str, Path]:
         # only the part below the store root is a pattern; the root may contain [ ] * ?
         pattern = f"*/{glob.escape(prefix)}*.jsonl"
-        return newest_by_id([(p.stem, p) for p in (self.home / "projects").glob(pattern)])
+        # sub-agent and other side files (e.g. agent-*.jsonl) are not resumable sessions
+        found = [(p.stem, p) for p in (self.home / "projects").glob(pattern) if SESSION_FILE.match(p.stem)]
+        return newest_by_id(found)
 
     def _session(self, sid: str, path: Path) -> Session:
         custom = ai = prompt = ""
         cwd = ""
-        for obj in iter_jsonl(path):
+        for obj in self._wanted_lines(path, lambda: not cwd, lambda: not prompt):
             t = obj.get("type")
             if not cwd and isinstance(obj.get("cwd"), str):
                 cwd = obj["cwd"]
@@ -68,6 +71,25 @@ class ClaudeAdapter:
         except OSError:
             mtime = 0.0
         return Session("claude", sid, cwd, title, mtime, path)
+
+    @staticmethod
+    def _wanted_lines(path: Path, need_cwd, need_prompt):
+        """Parse only the lines that can matter: transcripts are large and most lines
+        are messages, so skip JSON-decoding them once cwd and the first prompt are known."""
+        try:
+            f = path.open("rb")
+        except OSError:
+            return
+        with f:
+            for raw in f:
+                if not (b'-title"' in raw or need_cwd() or (need_prompt() and b'"user"' in raw)):
+                    continue
+                try:
+                    obj = json.loads(raw)
+                except ValueError:
+                    continue
+                if isinstance(obj, dict):
+                    yield obj
 
     def find(self, prefix: str) -> list[Session]:
         return [self._session(sid, p) for sid, p in sorted(self._transcripts(prefix).items())]
