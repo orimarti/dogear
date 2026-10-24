@@ -14,7 +14,7 @@ def asset(name):
 
 
 def tree(root):
-    return sorted(str(p.relative_to(root)) for p in root.rglob("*")) if root.exists() else []
+    return sorted(p.relative_to(root).as_posix() for p in root.rglob("*")) if root.exists() else []
 
 
 def test_setup_claude_writes_skill(homes):
