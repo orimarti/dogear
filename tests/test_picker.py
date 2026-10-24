@@ -40,7 +40,10 @@ def test_empty_rows():
     assert pick([], ctx=tty_ctx("1\n"), use_fzf="never", prompt="pick") is None
 
 
-def test_fzf_selection():
+def test_fzf_selection(monkeypatch):
+    import dogear.picker as picker_mod
+
+    monkeypatch.setattr(picker_mod, "WINDOWS", False)  # previews are off on Windows
     seen = {}
 
     def fake(args, text):
