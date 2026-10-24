@@ -39,11 +39,19 @@ def test_skills_mention_install_hint_and_command():
         assert "uv tool install dogear" in text
 
 
-def test_claude_skill_is_user_invoked_only():
+def test_claude_skill_accepts_plain_language():
     text = asset("claude_skill.md")
-    assert "disable-model-invocation: true" in text
+    assert "disable-model-invocation" not in text  # "dogear this session" works without the slash
     assert "$ARGUMENTS" in text
+    assert "dogear add testtest" in text  # worked example: "save with name testtest"
+    assert "Bash(dogear rename *)" in text and "already saved as" in text
 
 
-def test_codex_skill_not_implicit():
-    assert "allow_implicit_invocation: false" in asset("codex_openai.yaml")
+def test_codex_skill_accepts_plain_language():
+    text = asset("codex_skill.md")
+    assert "dogear add testtest" in text
+    assert "already saved as" in text
+
+
+def test_codex_skill_may_be_implicit():
+    assert "allow_implicit_invocation: true" in asset("codex_openai.yaml")

@@ -25,6 +25,10 @@ Then, optionally, add the in-session command:
 | Claude Code, as a personal skill | `dogear setup claude` | `/dogear` |
 | Codex | `dogear setup codex` | `$dogear` |
 
+Plain words work too: `/dogear save it as jobs, tag work` or just "dogear this
+session as jobs" — the agent turns it into the right `dogear add` flags (and
+renames the favourite if the session was already saved).
+
 Use the plugin **or** `dogear setup claude`, not both. The plugin only provides
 the slash command; the `dogear` CLI still comes from PyPI (the command tells you
 if it's missing).
