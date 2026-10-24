@@ -42,3 +42,14 @@ def test_no_personal_data():
             continue
         offenders += [f"{name}: {n}" for n in needles if n in text]
     assert offenders == []
+
+
+@pytest.mark.skipif(shutil.which("uv") is None, reason="needs uv")
+def test_sdist_contains_only_project_files(tmp_path):
+    """Local ignores (.git/info/exclude, global gitignore) must not leak into the sdist."""
+    import tarfile
+
+    subprocess.run(["uv", "build", "--sdist", "-o", str(tmp_path), str(ROOT)], check=True, capture_output=True)
+    [sdist] = tmp_path.glob("dogear-*.tar.gz")
+    tops = {n.split("/", 2)[1] for n in tarfile.open(sdist).getnames() if n.count("/") >= 1}
+    assert tops <= {"src", "tests", "pyproject.toml", "README.md", "LICENSE", "PKG-INFO", ".gitignore"}

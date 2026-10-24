@@ -35,6 +35,9 @@ dev = ["pytest>=8"]
 [tool.hatch.version]
 path = "src/dogear/__init__.py"
 
+[tool.hatch.build.targets.sdist]
+only-include = ["src", "tests", "README.md", "LICENSE", "pyproject.toml"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/dogear"]
 
