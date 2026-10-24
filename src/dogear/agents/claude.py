@@ -45,8 +45,9 @@ class ClaudeAdapter:
     # store -----------------------------------------------------------------
 
     def _transcripts(self, prefix: str = "") -> dict[str, Path]:
-        pattern = str(self.home / "projects" / "*" / f"{glob.escape(prefix)}*.jsonl")
-        return newest_by_id([(Path(p).stem, Path(p)) for p in glob.glob(pattern)])
+        # only the part below the store root is a pattern; the root may contain [ ] * ?
+        pattern = f"*/{glob.escape(prefix)}*.jsonl"
+        return newest_by_id([(p.stem, p) for p in (self.home / "projects").glob(pattern)])
 
     def _session(self, sid: str, path: Path) -> Session:
         custom = ai = prompt = ""

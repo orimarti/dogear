@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import glob
 import json
 import os
 from pathlib import Path
@@ -32,12 +31,12 @@ class CodexAdapter:
     # store -----------------------------------------------------------------
 
     def _rollouts(self, prefix: str = "") -> dict[str, Path]:
-        pattern = str(self.home / "sessions" / "*" / "*" / "*" / "rollout-*.jsonl")
+        # only the part below the store root is a pattern; the root may contain [ ] * ?
         found = []
-        for p in glob.glob(pattern):
-            sid = Path(p).stem[-UUID_LEN:]
+        for p in (self.home / "sessions").glob("*/*/*/rollout-*.jsonl"):
+            sid = p.stem[-UUID_LEN:]
             if sid.startswith(prefix):
-                found.append((sid, Path(p)))
+                found.append((sid, p))
         return newest_by_id(found)
 
     def _titles(self) -> dict[str, str]:

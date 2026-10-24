@@ -101,3 +101,22 @@ def test_recent_survives_file_deleted_mid_listing(homes, monkeypatch):
 
     monkeypatch.setattr(a, "_transcripts", vanish)
     a.recent(10)  # must not raise
+
+
+@pytest.mark.parametrize("agent", ["claude", "codex"])
+def test_store_root_with_glob_metacharacters(homes, monkeypatch, agent):
+    from dogear.agents import get_adapters
+    from tests.fakes import make_codex_rollout
+
+    sid = "8f1c2a3b-0000-4000-8000-000000000001"
+    root = homes.root / "user[work]" / f".{agent}"
+    if agent == "claude":
+        monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(root))
+        make_claude_session(root, sid, homes.root / "p")
+    else:
+        monkeypatch.setenv("CODEX_HOME", str(root))
+        make_codex_rollout(root, sid, homes.root / "p")
+    a = get_adapters()[agent]
+    assert a.exists(sid)
+    assert [s.session_id for s in a.find("8f1c")] == [sid]
+    assert [s.session_id for s in a.recent(5)] == [sid]
