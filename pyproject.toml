@@ -22,6 +22,10 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/orimarti/dogear"
+Issues = "https://github.com/orimarti/dogear/issues"
+
 [project.scripts]
 dogear = "dogear.cli:main"
 

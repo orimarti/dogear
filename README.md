@@ -21,7 +21,7 @@ Then, optionally, add the in-session command:
 
 | Where | How | You type |
 | --- | --- | --- |
-| Claude Code, as a plugin | `/plugin install dogear --marketplace <owner>/dogear` (or `/plugin marketplace add <owner>/dogear` then `/plugin install dogear@dogear`) | `/dogear:dogear` |
+| Claude Code, as a plugin | `/plugin install dogear --marketplace orimarti/dogear` (or `/plugin marketplace add orimarti/dogear` then `/plugin install dogear@dogear`) | `/dogear:dogear` |
 | Claude Code, as a personal skill | `dogear setup claude` | `/dogear` |
 | Codex | `dogear setup codex` | `$dogear` |
 

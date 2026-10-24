@@ -6,5 +6,11 @@
     "name": "Oriol Martí"
   },
   "license": "MIT",
-  "keywords": ["sessions", "resume", "bookmarks", "favourites"]
+  "keywords": [
+    "sessions",
+    "resume",
+    "bookmarks",
+    "favourites"
+  ],
+  "repository": "https://github.com/orimarti/dogear"
 }
