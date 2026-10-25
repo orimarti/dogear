@@ -2,6 +2,8 @@
 
 > Bookmark, save and resume Claude Code and Codex sessions from any folder. A tiny session manager with names, tags and notes.
 
+![dogear: save a session with /dogear, list it with dogear ls, resume it from any folder](https://raw.githubusercontent.com/orimarti/dogear/master/docs/demo.gif)
+
 You have hundreds of Claude sessions and Codex sessions spread over many
 folders, and a few of them matter. dogear keeps a short, named list of those —
 like folding the corner of a page — and resumes any of them with one command,
