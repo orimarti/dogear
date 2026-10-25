@@ -32,9 +32,15 @@ The skill only runs these commands, and is limited to them by its
 check that the tool is installed, `dogear add ...` to save the session, and
 `dogear rename ...` when the session was already saved under another name.
 
-`dogear` reads Claude Code's local session files to find the current session
-and stores your bookmarks in a single JSON file in its config folder
-(`~/.config/dogear` by default). It never uses the network.
+## Privacy
+
+dogear collects no data and sends nothing anywhere: it has no network access,
+no telemetry and no accounts. It reads Claude Code's (and Codex's) local
+session files to find the current session and show each session's folder and
+title. It stores your bookmarks (session ids, folders, titles, and your own
+labels, tags and notes) in one local file, `favorites.json`, in its config
+folder (`~/.config/dogear` by default). Deleting that file removes everything
+dogear has saved.
 
 Full documentation, Codex support and the source:
 https://github.com/orimarti/dogear (MIT licence).
