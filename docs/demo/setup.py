@@ -17,7 +17,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 
 CLAUDE = [
-    ("3f9a1c2e-5b7d-4e8f-9a0b-1c2d3e4f5a6b", "code/jobs-api", "Refactor auth middleware"),
+    ("3f9a1c2e-5b7d-4e8f-9a0b-1c2d3e4f5a6b", "code/todo-app", "Add dark mode toggle"),
     ("7c4e2a9b-1d3f-4a5b-8c6d-9e0f1a2b3c4d", "code/infra", "Terraform drift check"),
 ]
 CODEX = [

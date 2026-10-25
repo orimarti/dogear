@@ -30,13 +30,13 @@ def outside(homes):
 
 
 def test_add_explicit_id(homes):
-    make_claude_session(homes.claude, A, homes.root / "p", ai_title="New jobs API")
+    make_claude_session(homes.claude, A, homes.root / "p", ai_title="New todo app")
     code, ctx = run(["add", A])
     assert code == 0
     [f] = favs(homes)
-    assert f["label"] == "new-jobs-api" and f["session_id"] == A and f["agent"] == "claude"
+    assert f["label"] == "new-todo-app" and f["session_id"] == A and f["agent"] == "claude"
     assert f["added_at"] == "2026-01-02T03:04:05Z" and f["cwd"] == str(homes.root / "p")
-    assert "saved new-jobs-api" in ctx.stdout.getvalue()
+    assert "saved new-todo-app" in ctx.stdout.getvalue()
 
 
 def test_add_prefix(homes):

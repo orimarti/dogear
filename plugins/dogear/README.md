@@ -6,12 +6,12 @@ plain words or as flags:
 
 ```text
 /dogear:dogear
-/dogear:dogear jobs-api -t work -n "auth half done"
-/dogear:dogear save it as jobs, tag work
+/dogear:dogear todo-app -t work -n "auth half done"
+/dogear:dogear save it as todo, tag work
 ```
 
 Later, from any terminal, `dogear ls` lists your saved sessions and
-`dogear open jobs-api` (or `dogear` alone, to pick one) changes to the
+`dogear open todo-app` (or `dogear` alone, to pick one) changes to the
 session's folder and runs `claude --resume` for you.
 
 ## Requirements

@@ -30,8 +30,8 @@ Then, optionally, add the in-session command:
 | Claude Code, as a personal skill | `dogear setup claude` | `/dogear` |
 | Codex | `dogear setup codex` | `$dogear` |
 
-Plain words work too: `/dogear save it as jobs, tag work` or just "dogear this
-session as jobs" — the agent turns it into the right `dogear add` flags (and
+Plain words work too: `/dogear save it as todo, tag work` or just "dogear this
+session as todo" — the agent turns it into the right `dogear add` flags (and
 renames the favourite if the session was already saved).
 
 Use the plugin **or** `dogear setup claude`, not both. The plugin only provides
@@ -42,14 +42,14 @@ if it's missing).
 
 ```sh
 # inside a Claude Code or Codex session
-/dogear jobs-api -t work            # or $dogear … in Codex, or: ! dogear add jobs-api -t work
+/dogear todo-app -t work            # or $dogear … in Codex, or: ! dogear add todo-app -t work
 
 # later, from any terminal
 dogear ls
-#  #  LABEL       AGENT   FOLDER          TITLE           TAGS  NOTE
-#  1  jobs-api    claude  ~/code/jobs     New jobs api    work
-#  2  docs-site   codex   ~/code/site     Docs refresh
-dogear open jobs-api                 # cd ~/code/jobs && claude --resume <id>
+#  #  LABEL      AGENT   FOLDER           TITLE           TAGS  NOTE
+#  1  todo-app   claude  ~/code/todo-app  Add dark mode   work
+#  2  docs-site  codex   ~/code/site      Docs refresh
+dogear open todo-app                 # cd ~/code/todo-app && claude --resume <id>
 dogear                               # or pick from a list (uses fzf if installed)
 ```
 
@@ -130,7 +130,7 @@ one list.
 ### How do I save or bookmark a Claude Code session?
 
 Inside the session, type `/dogear` with an optional name, tags or a note, in
-flags or plain words: `/dogear jobs-api -t work` or `/dogear save it as jobs-api, tag work`.
+flags or plain words: `/dogear todo-app -t work` or `/dogear save it as todo-app, tag work`.
 From a terminal, `dogear add` lets you pick from your 50 most recent sessions.
 
 ### How is this different from `claude --resume` or `codex resume`?

@@ -98,10 +98,10 @@ def test_label_for_saved_session_clash(homes):
 
 def test_tag_takes_one_value(homes):
     make_claude_session(homes.claude, A, homes.root / "p")
-    code, ctx = run(["add", "-t", "work", "jobs"], proc_table=in_claude(homes, A), pid=300)
+    code, ctx = run(["add", "-t", "work", "todo"], proc_table=in_claude(homes, A), pid=300)
     assert code == 0, ctx.stderr.getvalue()
     [f] = favs(homes)
-    assert f["label"] == "jobs" and f["tags"] == ["work"]
+    assert f["label"] == "todo" and f["tags"] == ["work"]
 
 
 def test_tag_commas_and_repeats(homes):

@@ -14,7 +14,7 @@ def sess(title, agent="claude"):
 
 
 def test_slugify():
-    assert fv.slugify("New jobs API!") == "new-jobs-api"
+    assert fv.slugify("New todo app!") == "new-todo-app"
     assert fv.slugify("Café — résumé") == "cafe-resume"
     assert fv.slugify("日本語") == ""
     long = fv.slugify("word " * 30)
@@ -22,7 +22,7 @@ def test_slugify():
 
 
 def test_default_label():
-    assert fv.default_label(sess("New jobs API")) == "new-jobs-api"
+    assert fv.default_label(sess("New todo app")) == "new-todo-app"
     assert fv.default_label(sess("日本語")) == "claude-8f1c2a3b"
     assert fv.default_label(sess("(untitled)")) == "claude-8f1c2a3b"
     assert fv.default_label(sess("2024", agent="codex")) == "codex-2024"
@@ -40,7 +40,7 @@ def test_validate_label_rejects(bad):
 
 
 def test_validate_label_accepts():
-    fv.validate_label("jobs-api")
+    fv.validate_label("todo-app")
     fv.validate_label("v2")
 
 
