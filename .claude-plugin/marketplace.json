@@ -1,6 +1,6 @@
 {
   "name": "dogear",
-  "description": "dogear: favourite, list and resume Claude Code and Codex sessions.",
+  "description": "dogear: bookmark, save and resume Claude Code and Codex sessions from any folder.",
   "owner": {
     "name": "Oriol Martí"
   },
@@ -8,7 +8,7 @@
     {
       "name": "dogear",
       "source": "./plugins/dogear",
-      "description": "/dogear:dogear saves the current session as a dogear favourite."
+      "description": "/dogear:dogear bookmarks the current session so you can resume it later from any folder."
     }
   ]
 }

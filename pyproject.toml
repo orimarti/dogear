@@ -5,20 +5,27 @@ build-backend = "hatchling.build"
 [project]
 name = "dogear"
 dynamic = ["version"]
-description = "Dog-ear your Claude Code and Codex sessions: favorite, list and resume them from any folder."
+description = "Bookmark, save and resume Claude Code and Codex sessions from any folder: a tiny session manager with names, tags and notes."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Oriol Martí" }]
-keywords = ["claude-code", "codex", "sessions", "resume", "cli", "bookmarks"]
+keywords = [
+    "claude-code", "claude", "anthropic", "codex", "codex-cli", "openai-codex",
+    "sessions", "session-manager", "resume", "bookmark", "bookmarks", "cli", "ai-agents",
+]
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
+    "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+    "Topic :: Utilities",
 ]
 dependencies = []
 
