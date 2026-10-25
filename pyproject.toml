@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dogear"
+dynamic = ["version"]
+description = "Dog-ear your Claude Code and Codex sessions: favorite, list and resume them from any folder."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Oriol Martí" }]
+keywords = ["claude-code", "codex", "sessions", "resume", "cli", "bookmarks"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/orimarti/dogear"
+Issues = "https://github.com/orimarti/dogear/issues"
+
+[project.scripts]
+dogear = "dogear.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.hatch.version]
+path = "src/dogear/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src", "tests", "README.md", "LICENSE", "pyproject.toml"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dogear"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

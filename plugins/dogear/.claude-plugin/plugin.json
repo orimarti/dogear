@@ -1,0 +1,16 @@
+{
+  "name": "dogear",
+  "version": "0.1.0",
+  "description": "/dogear saves the current session as a dogear favourite (needs the dogear CLI from PyPI).",
+  "author": {
+    "name": "Oriol Martí"
+  },
+  "license": "MIT",
+  "keywords": [
+    "sessions",
+    "resume",
+    "bookmarks",
+    "favourites"
+  ],
+  "repository": "https://github.com/orimarti/dogear"
+}
