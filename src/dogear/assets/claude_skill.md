@@ -25,8 +25,8 @@ The user's request: $ARGUMENTS
 
    Examples:
    - "save with name testtest" → `dogear add testtest`
-   - "call it jobs, tags work and client, note: auth half done" →
-     `dogear add jobs -t work -t client -n "auth half done"`
+   - "call it todo, tags work and client, note: auth half done" →
+     `dogear add todo -t work -t client -n "auth half done"`
    - "bookmark this with opus" → `dogear add --args "--model opus"`
 4. Run that command once with the shell tool.
 5. If the output says `already saved as OLD` and the user asked for a

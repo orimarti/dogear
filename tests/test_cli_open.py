@@ -12,9 +12,9 @@ ID = "8f1c2a3b-0000-4000-8000-000000000001"
 def saved(homes):
     cwd = homes.root / "My Project" / "é"
     cwd.mkdir(parents=True)
-    make_claude_session(homes.claude, ID, cwd, ai_title="Jobs")
+    make_claude_session(homes.claude, ID, cwd, ai_title="Todo")
     homes.dogear.mkdir()
-    fav = {"agent": "claude", "session_id": ID, "cwd": str(cwd), "label": "jobs", "title": "Jobs", "note": "", "tags": [], "args": "--model opus", "added_at": "2026-01-01T00:00:00Z"}
+    fav = {"agent": "claude", "session_id": ID, "cwd": str(cwd), "label": "todo", "title": "Todo", "note": "", "tags": [], "args": "--model opus", "added_at": "2026-01-01T00:00:00Z"}
     (homes.dogear / "favorites.json").write_text(json.dumps({"version": 1, "favorites": [fav]}), encoding="utf-8")
     homes.cwd = cwd
     return homes
@@ -26,7 +26,7 @@ def run(argv, **kw):
 
 
 def test_open_execs_resume_in_cwd(saved):
-    code, ctx = run(["open", "jobs"])
+    code, ctx = run(["open", "todo"])
     assert code == 0, ctx.stderr.getvalue()
     [(cmd, cwd)] = ctx.exec_calls
     assert cmd == ["/fake/bin/claude", "--model", "opus", "--resume", ID]
@@ -40,29 +40,29 @@ def test_open_by_number(saved):
 
 
 def test_open_extra_flags_replace(saved):
-    _, ctx = run(["open", "jobs", "--", "--model", "x"])
+    _, ctx = run(["open", "todo", "--", "--model", "x"])
     assert ctx.exec_calls[0][0] == ["/fake/bin/claude", "--model", "x", "--resume", ID]
 
 
 def test_open_bare_double_dash_means_no_flags(saved):
-    _, ctx = run(["open", "jobs", "--"])
+    _, ctx = run(["open", "todo", "--"])
     assert ctx.exec_calls[0][0] == ["/fake/bin/claude", "--resume", ID]
 
 
 def test_open_missing_session(saved):
     next((saved.claude / "projects").glob(f"*/{ID}.jsonl")).unlink()
-    code, ctx = run(["open", "jobs"])
+    code, ctx = run(["open", "todo"])
     assert code == 1 and "prune" in ctx.stderr.getvalue() and ctx.exec_calls == []
 
 
 def test_open_missing_folder(saved):
     saved.cwd.rmdir()
-    code, ctx = run(["open", "jobs"])
+    code, ctx = run(["open", "todo"])
     assert code == 1 and "folder" in ctx.stderr.getvalue() and ctx.exec_calls == []
 
 
 def test_open_command_not_found(saved):
-    code, ctx = run(["open", "jobs"], which=lambda n: None)
+    code, ctx = run(["open", "todo"], which=lambda n: None)
     assert code == 1 and "[claude] command" in ctx.stderr.getvalue()
 
 

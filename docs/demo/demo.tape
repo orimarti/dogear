@@ -20,9 +20,9 @@ Sleep 2s
 Show
 
 # Inside an agent session: bookmark it
-Type "cd ~/code/jobs-api && claude" Enter
+Type "cd ~/code/todo-app && claude" Enter
 Sleep 1.2s
-Type "/dogear jobs-api -t work" Sleep 400ms Enter
+Type "/dogear todo-app -t work" Sleep 400ms Enter
 Sleep 2.5s
 Type "/exit" Enter
 Sleep 600ms
@@ -34,7 +34,7 @@ Sleep 3.5s
 # Pick one and land back in it, in the right folder
 Type "dogear" Enter
 Sleep 1.5s
-Type "jobs" Sleep 900ms Enter
+Type "todo" Sleep 900ms Enter
 Sleep 2.5s
 Type "/exit" Enter
 Sleep 600ms

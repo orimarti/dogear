@@ -23,8 +23,8 @@ asked for; it may be nothing beyond "save it".
 
    Examples:
    - "save with name testtest" → `dogear add testtest`
-   - "call it jobs, tags work and client, note: auth half done" →
-     `dogear add jobs -t work -t client -n "auth half done"`
+   - "call it todo, tags work and client, note: auth half done" →
+     `dogear add todo -t work -t client -n "auth half done"`
 4. Run that command once with the shell tool.
 5. If the output says `already saved as OLD` and the user asked for a
    different name NEW, run `dogear rename OLD NEW` once.
