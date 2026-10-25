@@ -1,7 +1,7 @@
 {
   "name": "dogear",
   "version": "0.1.0",
-  "description": "/dogear saves the current session as a dogear favourite (needs the dogear CLI from PyPI).",
+  "description": "/dogear bookmarks the current Claude Code session so you can resume it later from any folder (needs the dogear CLI from PyPI).",
   "author": {
     "name": "Oriol Martí"
   },
@@ -9,8 +9,11 @@
   "keywords": [
     "sessions",
     "resume",
+    "bookmark",
     "bookmarks",
+    "session-manager",
     "favourites"
   ],
-  "repository": "https://github.com/orimarti/dogear"
+  "repository": "https://github.com/orimarti/dogear",
+  "homepage": "https://github.com/orimarti/dogear"
 }

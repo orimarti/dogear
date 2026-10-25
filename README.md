@@ -1,14 +1,17 @@
-# dogear
+# dogear: bookmark and resume Claude Code & Codex sessions
 
-> Dog-ear your Claude Code and Codex sessions: favorite, list and resume them from any folder.
+> Bookmark, save and resume Claude Code and Codex sessions from any folder. A tiny session manager with names, tags and notes.
 
-You have hundreds of agent conversations spread over many folders, and a few of
-them matter. dogear keeps a short list of those — like folding the corner of a
-page — and reopens any of them with one command, from anywhere.
+You have hundreds of Claude sessions and Codex sessions spread over many
+folders, and a few of them matter. dogear keeps a short, named list of those —
+like folding the corner of a page — and resumes any of them with one command,
+from anywhere: it changes to the session's folder and runs `claude --resume` or
+`codex resume` for you.
 
 - Save the session you're in without leaving it: `/dogear` (Claude Code), `$dogear` (Codex), or `! dogear add`.
 - Save any recent session from a normal terminal through a picker.
-- `dogear` alone: pick a favourite, land in its folder, resumed.
+- One list for both agents, with your own names, tags and notes.
+- `dogear` alone: pick a saved session, land in its folder, resumed.
 - Python 3.11+, standard library only. macOS, Linux and Windows. No network access, ever.
 
 ## Install
@@ -106,6 +109,40 @@ Windows this detection is best effort: if it fails, use `dogear add <session-id>
 Resuming runs `claude --resume <id>` / `codex resume <id>` from the session's
 folder. dogear replaces itself with the agent (on Windows it runs it and waits),
 so your shell is where you left it when the agent exits.
+
+## FAQ
+
+### How do I resume a Claude Code session from another folder?
+
+Save it once with `/dogear my-label` (or `dogear add` from a terminal). From
+then on, `dogear open my-label` works from any directory: dogear changes to the
+folder the session was started in and runs `claude --resume <id>` there.
+
+### How do I resume a Codex session?
+
+The same way. `$dogear my-label` inside Codex (after `dogear setup codex`), or
+`dogear add` from a terminal, saves it; `dogear open my-label` runs
+`codex resume <id>` in the right folder. Claude Code and Codex sessions share
+one list.
+
+### How do I save or bookmark a Claude Code session?
+
+Inside the session, type `/dogear` with an optional name, tags or a note, in
+flags or plain words: `/dogear jobs-api -t work` or `/dogear save it as jobs-api, tag work`.
+From a terminal, `dogear add` lets you pick from your 50 most recent sessions.
+
+### How is this different from `claude --resume` or `codex resume`?
+
+Those pickers list every past session; dogear is the short list you chose to
+keep, with names you'll remember, across both agents, and it starts each
+session from the right folder. It uses the agents' own resume commands, so
+nothing about the sessions themselves changes.
+
+### Does dogear upload or modify my sessions?
+
+No. It only reads the agents' files, never writes to them (except installing
+the in-session command when you run `dogear setup`), and makes no network
+requests.
 
 ## Development
 
